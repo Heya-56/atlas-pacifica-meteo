@@ -36,6 +36,8 @@ def fetch(url, dest):
         f.write(r.read())
     return dest
 
+ARPEGE_ERR = []
+
 def get_arpege(tmp):
     # Paquet SP1 (surface) ARPEGE 0.25° publié sur meteo.data.gouv.fr
     for run in latest_runs():
@@ -46,6 +48,7 @@ def get_arpege(tmp):
             return fetch(url, os.path.join(tmp, "arpege.grib2")), run, "ARPEGE 0.25"
         except Exception as e:
             print(f"[arpege] {iso} indisponible ({e})", file=sys.stderr)
+            ARPEGE_ERR.append(f"{url} -> {e}")
     return None
 
 def get_gfs(tmp, dom):
@@ -145,7 +148,8 @@ def main():
     meta = {"model": model, "domain": a.domain, "bbox_0_360": dom,
             "run": run.strftime("%Y-%m-%dT%H:00Z") if run else None,
             "generated": dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%MZ"),
-            "pmin": round(float(p.min()), 1), "pmax": round(float(p.max()), 1)}
+            "pmin": round(float(p.min()), 1), "pmax": round(float(p.max()), 1),
+            "arpege_errors": ARPEGE_ERR[:2]}
 
     iso = isobars(lat, lon, p, a.step)
     ctr = centers(lat, lon, p, res, a.radius, a.min_depth)
