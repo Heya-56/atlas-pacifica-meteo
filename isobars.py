@@ -41,7 +41,7 @@ def get_arpege(tmp):
     for run in latest_runs():
         iso = run.strftime("%Y-%m-%dT%H:00:00Z")
         url = (f"https://object.data.gouv.fr/meteofrance-pnt/pnt/{iso}/arpege/025/SP1/"
-               f"arpege__025__SP1__000H012H__{iso}.grib2")
+               f"arpege__025__SP1__000H024H__{iso}.grib2")
         try:
             return fetch(url, os.path.join(tmp, "arpege.grib2")), run, "ARPEGE 0.25"
         except Exception as e:

@@ -1,0 +1,103 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Atlas Pacifica Isobares</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : carte plein cadre façon carte synoptique, panneau latéral (empilé sur mobile) */
+:root{--bg:#eef3f4;--sea:#dbe8ec;--fg:#14262c;--muted:#5b7078;--line:#2f5361;--low:#c2412d;--high:#1d5fa8;--card:#f8fbfb;--rule:#c4d3d7;
+--display:"Fraunces",Georgia,serif;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d171b;--sea:#12232a;--fg:#e2ecee;--muted:#8ea3aa;--line:#9cc3d0;--low:#ff7a62;--high:#6fa8ef;--card:#152a31;--rule:#25404a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d171b;--sea:#12232a;--fg:#e2ecee;--muted:#8ea3aa;--line:#9cc3d0;--low:#ff7a62;--high:#6fa8ef;--card:#152a31;--rule:#25404a;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);padding:16px;padding-block:16px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(1.5rem,4vw,2.2rem);margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:.85rem;margin-top:4px}
+.badge{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--low);color:var(--low);padding:3px 8px;border-radius:3px}
+.tabs{display:flex;gap:6px}
+.tabs button,.file{font:500 .85rem var(--body);border:1px solid var(--rule);background:var(--card);color:var(--fg);padding:7px 12px;border-radius:4px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button:focus-visible,.file:focus-within{outline:2px solid var(--high);outline-offset:2px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px}
+@media (max-width:820px){.main{grid-template-columns:1fr}}
+.map{background:var(--sea);border:1px solid var(--rule);border-radius:4px;min-width:0}
+canvas{display:block;width:100%;height:auto}
+aside{display:grid;gap:14px;align-content:start;min-width:0}
+.panel{background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:14px}
+.panel h2{font:600 .72rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.8rem;font-variant-numeric:tabular-nums}
+td{padding:5px 0;border-top:1px solid var(--rule)}td:last-child{text-align:right}
+.L{color:var(--low);font-weight:600}.H{color:var(--high);font-weight:600}
+.legend{display:grid;gap:6px;font-size:.82rem}
+.legend span{display:inline-block;width:22px;vertical-align:middle;margin-right:8px;border-top:2px solid var(--line)}
+.legend span.thin{border-top-width:1px;opacity:.6}
+p.note{font-size:.8rem;color:var(--muted);margin:8px 0 0;line-height:1.45}
+.file input{display:none}
+</style>
+</head><body><div class="wrap">
+<header>
+ <div><h1>Isobares du Pacifique Sud</h1><div class="sub" id="meta">Pression au niveau de la mer · hPa · généré 2026-10-11T05:59Z</div></div>
+ <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+  <span class="badge" id="badge">Chargement…</span><span hidden>GFS 0.25 · run 2026-10-11T00:00Z</span>
+  <div class="tabs" role="group" aria-label="Domaine">
+   <button id="b-pacific" aria-pressed="true">Pacifique</button>
+   <button id="b-pf" aria-pressed="false">Polynésie</button>
+  </div>
+ </div>
+</header>
+<div class="main">
+ <div class="map"><canvas id="c" width="1120" height="640" aria-label="Carte des isobares"></canvas></div>
+ <aside>
+  <div class="panel"><h2>Centres détectés</h2><table id="list"></table></div>
+  <div class="panel"><h2>Légende</h2><div class="legend">
+   <div><span></span>Isobare principale (multiple de 4 hPa)</div>
+   <div><span class="thin"></span>Isobare intermédiaire</div>
+   <div><b class="L">D</b> dépression · <b class="H">A</b> anticyclone</div>
+  </div></div>
+  <div class="panel"><h2>Données réelles</h2>
+   <label class="file" for="f">Charger isobars + centers .geojson<input id="f" type="file" accept=".geojson,.json" multiple></label>
+   <p class="note">Sélectionne les deux fichiers produits par isobars.py (même domaine). La carte remplace la démo.</p>
+  </div>
+ </aside>
+</div>
+</div>
+<script>
+const DEMO={};
+const VIEW={pacific:[130,270,-50,30],pf:[205,230,-32,-5]};
+const PLACES=[["Tahiti",210.5,-17.6],["Marquises",220.5,-9.3],["Tuamotu",215,-16.5],["Australes",210.5,-23.5],["Gambier",225,-23.1],["Fidji",178,-17.8],["Nouvelle-Calédonie",165.6,-21.3],["Samoa",188.2,-13.8],["Cook",200.2,-21.2],["Hawaï",204.2,21.3],["Nouvelle-Zélande",174.8,-41.3],["Pitcairn",229.9,-25.1]];
+let dom="pacific",data=JSON.parse(JSON.stringify(DEMO));
+const cv=document.getElementById("c"),ctx=cv.getContext("2d");
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function draw(){
+ const [x0,x1,y0,y1]=VIEW[dom],W=cv.width,H=cv.height,pad=34;
+ const px=l=>pad+(l-x0)/(x1-x0)*(W-2*pad),py=a=>pad+(y1-a)/(y1-y0)*(H-2*pad);
+ ctx.clearRect(0,0,W,H);
+ ctx.strokeStyle=css("--rule");ctx.lineWidth=1;ctx.fillStyle=css("--muted");ctx.font="12px 'IBM Plex Mono',monospace";
+ const st=dom==="pf"?5:10;
+ for(let l=Math.ceil(x0/st)*st;l<=x1;l+=st){ctx.beginPath();ctx.moveTo(px(l),pad);ctx.lineTo(px(l),H-pad);ctx.stroke();const e=l>180?(360-l)+"°O":l+"°E";ctx.fillText(e,px(l)-14,H-12)}
+ for(let a=Math.ceil(y0/st)*st;a<=y1;a+=st){ctx.beginPath();ctx.moveTo(pad,py(a));ctx.lineTo(W-pad,py(a));ctx.stroke();ctx.fillText(a<0?-a+"°S":a+"°N",2,py(a)+4)}
+ const d=data[dom];if(!d)return;
+ ctx.strokeStyle=css("--line");ctx.fillStyle=css("--line");ctx.font="600 12px 'IBM Plex Mono',monospace";
+ for(const f of d.iso){const c=f.geometry.coordinates,maj=f.properties.major||dom==="pf";
+  ctx.globalAlpha=maj?1:.55;ctx.lineWidth=maj?1.6:.9;ctx.beginPath();c.forEach(([lo,la],i)=>i?ctx.lineTo(px(lo),py(la)):ctx.moveTo(px(lo),py(la)));ctx.stroke();
+  if(maj&&c.length>20){const [lo,la]=c[Math.floor(c.length/2)];const t=f.properties.hpa,w=ctx.measureText(t).width;ctx.globalAlpha=1;ctx.fillStyle=css("--sea");ctx.fillRect(px(lo)-w/2-3,py(la)-8,w+6,15);ctx.fillStyle=css("--line");ctx.fillText(t,px(lo)-w/2,py(la)+4)}}
+ ctx.globalAlpha=1;
+ ctx.font="12px 'IBM Plex Sans',sans-serif";
+ for(const [n,lo,la] of PLACES){if(lo<x0||lo>x1||la<y0||la>y1)continue;ctx.fillStyle=css("--fg");ctx.beginPath();ctx.arc(px(lo),py(la),3,0,7);ctx.fill();ctx.fillStyle=css("--muted");ctx.fillText(n,px(lo)+6,py(la)-5)}
+ for(const f of d.ctr){const [lo,la]=f.geometry.coordinates,L=f.properties.type==="L",col=css(L?"--low":"--high");
+  ctx.fillStyle=col;ctx.font="600 30px 'Fraunces',Georgia,serif";ctx.fillText(L?"D":"A",px(lo)-10,py(la)+10);
+  ctx.font="600 12px 'IBM Plex Mono',monospace";ctx.fillText(Math.round(f.properties.hpa),px(lo)-14,py(la)+26)}
+ const rows=d.ctr.slice().sort((a,b)=>a.properties.hpa-b.properties.hpa).map(f=>{const p=f.properties,[lo,la]=f.geometry.coordinates;
+  return `<tr><td class="${p.type}">${p.label}</td><td>${Math.abs(la).toFixed(1)}°${la<0?"S":"N"} ${(lo>180?360-lo:lo).toFixed(1)}°${lo>180?"O":"E"}</td><td>${p.hpa.toFixed(1)}</td></tr>`});
+ document.getElementById("list").innerHTML=rows.join("")||"<tr><td>Aucun centre dans ce domaine</td></tr>";
+}
+for(const k of ["pacific","pf"])document.getElementById("b-"+k).onclick=()=>{dom=k;for(const j of ["pacific","pf"])document.getElementById("b-"+j).setAttribute("aria-pressed",j===k);draw()};
+document.getElementById("f").onchange=async e=>{const d={iso:[],ctr:[]};let meta;
+ for(const file of e.target.files){try{const j=JSON.parse(await file.text());meta=j.metadata||meta;for(const f of j.features)(f.geometry.type==="Point"?d.ctr:d.iso).push(f)}catch(err){document.getElementById("meta").textContent="Fichier illisible : "+file.name;return}}
+ const k=meta&&VIEW[meta.domain]?meta.domain:dom;data[k]=d;dom=k;document.getElementById("b-"+k).click();
+ document.getElementById("badge").textContent=meta?meta.model+" · run "+meta.run:"Données chargées";
+ document.getElementById("meta").textContent="Pression au niveau de la mer · hPa"+(meta?" · généré "+meta.generated:"")};
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+async function live(){try{for(const k of ["pacific","pf"]){const[i,c,m]=await Promise.all(["isobars_"+k+".geojson","centers_"+k+".geojson","meta_"+k+".json"].map(f=>fetch("data/"+f+"?t="+Date.now()).then(r=>r.json())));data[k]={iso:i.features,ctr:c.features};if(k==="pacific"){document.getElementById("badge").textContent=m.model+" · run "+m.run;document.getElementById("meta").textContent="Pression au niveau de la mer · hPa · généré "+m.generated}}draw()}catch(e){document.getElementById("badge").textContent="Données indisponibles"}}
+live();setInterval(live,1800000);
+document.fonts&&document.fonts.ready.then(draw);draw();
+</script></body></html>
