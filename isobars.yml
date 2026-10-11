@@ -1,0 +1,35 @@
+name: Isobares Pacifique
+on:
+  schedule:
+    - cron: "15 4,10,16,22 * * *"   # ~4 h après chaque run 00/06/12/18Z
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Générer Pacifique + Polynésie
+        run: |
+          python isobars.py --domain pacific --step 4 --radius 8 --out data
+          python isobars.py --domain pf      --step 2 --radius 4 --out data
+      # Option A : publier dans R2 (décommente et ajoute les secrets du dépôt)
+      # - name: Upload R2
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      #   run: aws s3 sync data s3://${{ secrets.R2_BUCKET }}/meteo --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --cache-control "max-age=1800"
+      # Option B (par défaut) : commit dans le dépôt -> servi par Cloudflare Pages
+      - name: Commit
+        run: |
+          git config user.name "isobars-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "isobares $(date -u +%FT%HZ)"
+          git push
