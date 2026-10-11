@@ -1,0 +1,6 @@
+numpy
+scipy
+xarray
+cfgrib>=0.9.14
+eccodes>=2.37
+matplotlib
