@@ -117,6 +117,30 @@ def centers(lat, lon, p, res_deg, radius_deg=6.0, min_depth=2.0):
                                          "coordinates": [round(float(lon[j]), 2), round(float(lat[i]), 2)]}})
     return out
 
+def merge_centers(base, extra, min_sep_deg):
+    """Ajoute les centres `extra` absents de `base` (même type, à plus de min_sep_deg)."""
+    out = list(base)
+    for c in extra:
+        x, y = c["geometry"]["coordinates"]
+        t = c["properties"]["type"]
+        if all(o["properties"]["type"] != t or
+               np.hypot(o["geometry"]["coordinates"][0] - x, o["geometry"]["coordinates"][1] - y) > min_sep_deg
+               for o in out):
+            out.append(c)
+    return out
+
+def tropical_lows(lat, lon, p, res_deg, radius_deg=3.0, min_depth=1.0, lat_max=25.0):
+    """Dépressions tropicales faibles (Samoa, Fidji, Vanuatu…) : rayon court, seuil bas.
+    Le passage synoptique (grand rayon) les masque quand un creux plus profond
+    se trouve dans la même fenêtre ou quand l'écart à la moyenne 16°x16° est < 2 hPa."""
+    band = np.abs(lat) <= lat_max
+    if not band.any():
+        return []
+    rows = np.where(band)[0]
+    sub = p[rows.min():rows.max() + 1]
+    found = centers(lat[rows.min():rows.max() + 1], lon, sub, res_deg, radius_deg, min_depth)
+    return [c for c in found if c["properties"]["type"] == "L"]
+
 # ---------------------------------------------------------------- Main
 def main():
     ap = argparse.ArgumentParser()
@@ -126,6 +150,10 @@ def main():
     ap.add_argument("--step", type=float, default=2.0, help="intervalle isobares (hPa)")
     ap.add_argument("--radius", type=float, default=6.0, help="rayon de détection D/A (degrés)")
     ap.add_argument("--min-depth", type=float, default=2.0, help="écart min. à l'environnement (hPa)")
+    ap.add_argument("--no-tropical", dest="tropical", action="store_false",
+                    help="désactive la passe dépressions tropicales faibles")
+    ap.add_argument("--trop-radius", type=float, default=3.0, help="rayon passe tropicale (degrés)")
+    ap.add_argument("--trop-depth", type=float, default=1.0, help="écart min. passe tropicale (hPa)")
     ap.add_argument("--out", default="out")
     a = ap.parse_args()
 
@@ -153,6 +181,9 @@ def main():
 
     iso = isobars(lat, lon, p, a.step)
     ctr = centers(lat, lon, p, res, a.radius, a.min_depth)
+    ctr = merge_centers([], ctr, 1.0)                     # doublons de plateau (ex. 2 A à 0.25°)
+    if a.tropical:
+        ctr = merge_centers(ctr, tropical_lows(lat, lon, p, res, a.trop_radius, a.trop_depth), 5.0)
 
     os.makedirs(a.out, exist_ok=True)
     for name, feats in (("isobars", iso), ("centers", ctr)):
