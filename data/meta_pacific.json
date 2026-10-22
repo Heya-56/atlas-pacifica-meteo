@@ -7,12 +7,12 @@
     130,
     270
   ],
-  "run": "2026-10-22T06:00Z",
-  "generated": "2026-10-22T15:15Z",
-  "pmin": 967.9,
-  "pmax": 1030.5,
+  "run": "2026-10-22T12:00Z",
+  "generated": "2026-10-22T20:06Z",
+  "pmin": 968.6,
+  "pmax": 1031.2,
   "arpege_errors": [
-    "https://object.data.gouv.fr/meteofrance-pnt/pnt/2026-10-22T06:00:00Z/arpege/025/SP1/arpege__025__SP1__000H024H__2026-10-22T06:00:00Z.grib2 -> HTTP Error 404: Not Found",
-    "https://object.data.gouv.fr/meteofrance-pnt/pnt/2026-10-22T00:00:00Z/arpege/025/SP1/arpege__025__SP1__000H024H__2026-10-22T00:00:00Z.grib2 -> HTTP Error 404: Not Found"
+    "https://object.data.gouv.fr/meteofrance-pnt/pnt/2026-10-22T12:00:00Z/arpege/025/SP1/arpege__025__SP1__000H024H__2026-10-22T12:00:00Z.grib2 -> HTTP Error 404: Not Found",
+    "https://object.data.gouv.fr/meteofrance-pnt/pnt/2026-10-22T06:00:00Z/arpege/025/SP1/arpege__025__SP1__000H024H__2026-10-22T06:00:00Z.grib2 -> HTTP Error 404: Not Found"
   ]
 }
