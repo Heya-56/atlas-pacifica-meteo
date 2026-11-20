@@ -7,12 +7,12 @@
     130,
     270
   ],
-  "run": "2026-11-20T06:00Z",
-  "generated": "2026-11-20T13:15Z",
-  "pmin": 980.3,
-  "pmax": 1033.4,
+  "run": "2026-11-20T18:00Z",
+  "generated": "2026-11-20T23:04Z",
+  "pmin": 986.6,
+  "pmax": 1033.3,
   "arpege_errors": [
-    "https://object.data.gouv.fr/meteofrance-pnt/pnt/2026-11-20T06:00:00Z/arpege/025/SP1/arpege__025__SP1__000H024H__2026-11-20T06:00:00Z.grib2 -> <urlopen error timed out>",
-    "https://object.data.gouv.fr/meteofrance-pnt/pnt/2026-11-20T00:00:00Z/arpege/025/SP1/arpege__025__SP1__000H024H__2026-11-20T00:00:00Z.grib2 -> <urlopen error timed out>"
+    "https://object.data.gouv.fr/meteofrance-pnt/pnt/2026-11-20T12:00:00Z/arpege/025/SP1/arpege__025__SP1__000H024H__2026-11-20T12:00:00Z.grib2 -> <urlopen error timed out>",
+    "https://object.data.gouv.fr/meteofrance-pnt/pnt/2026-11-20T06:00:00Z/arpege/025/SP1/arpege__025__SP1__000H024H__2026-11-20T06:00:00Z.grib2 -> <urlopen error timed out>"
   ]
 }
